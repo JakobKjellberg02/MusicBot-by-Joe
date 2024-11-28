@@ -24,7 +24,7 @@ class Music(commands.Cog):
             source,
             after=lambda e: self.bot.loop.create_task(self.song_finished(interaction))
         )
-        
+
         if self.player_message:
             await self.player_message.delete()  
 
