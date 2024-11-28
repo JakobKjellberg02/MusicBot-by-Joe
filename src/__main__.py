@@ -4,6 +4,11 @@ import logging
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from util.musicManager import MusicManager
+from util.terminalPrint import TColor
+
+from cogs.play import PlayCommand
+from cogs.skip import SkipCommand
 
 load_dotenv() # load .env for API key
 DISCORD_BOT_API_KEY = os.getenv('DISCORD_TOKEN') # Discord API key
@@ -17,21 +22,30 @@ intents.members = True
 
 # MusicBot main class
 class MusicByJoe(commands.Bot):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.music_manager = MusicManager()  
+    
     async def setup_hook(self):
-        """ Loads commands from the cogs folder"""
-        if os.path.exists('src/cogs'):
-            for filename in os.listdir('src/cogs'):
-                if filename.endswith('.py'):
-                    try:
-                        await self.load_extension(f'cogs.{filename[:-3]}')
-                        print(f'Loaded extension: {filename}')
-                    except Exception as e:
-                        print(f'Failed to load extension {filename}: {str(e)}')
+        """Setup cogs and other async configurations."""
+        cogs = [
+            (PlayCommand, [self, self.music_manager], "PlayCommand"),
+            (SkipCommand, [self], "SkipCommand"),
+        ]
+
+        for cog_class, args, cog_name in cogs:
+            try:
+                await self.add_cog(cog_class(*args))
+                print(TColor.colorize(f"Successfully loaded {cog_name}.", TColor.OK))
+            except Exception as e:
+                print(TColor.colorize(f"{TColor.ERR}Failed to load {cog_name}{TColor.RESET}: {str(e)}"
+                    , TColor.ERR))
+
         try:
-            synced = await self.tree.sync()
-            print(f"Synced {len(synced)} slash command(s)")
+            await self.tree.sync()
+            print("Application commands synced successfully.")
         except Exception as e:
-            print(f"Error syncing slash commands: {str(e)}")
+            print(f"Failed to sync application commands: {str(e)}")
 
     async def on_ready(self):
         """ Ready check from the bot"""
