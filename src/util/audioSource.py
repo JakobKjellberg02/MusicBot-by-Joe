@@ -27,21 +27,23 @@ class AudioSource:
     async def get_audio_source_yt(self, url):
         try:
             info = await asyncio.to_thread(self.ytdl.extract_info, url, download=False)
-            if 'url' not in info:
-                print(f"The audio URL was invalid")
-                return None
+            
+            if not info or 'url' not in info:
+                raise ValueError("Invalid audio source")
             
             audio_url = info['url']
-            if not audio_url:
-                print(f"Audio URL is empty")
-                return None
-            
             audio_source = discord.FFmpegOpusAudio(
                 audio_url, 
                 **self.ffmpeg_options
             )
 
+            audio_source.url = url
+            audio_source.title = info.get('title', 'Unknown Title')
+            audio_source.duration = info.get('duration', 0)
+            audio_source.thumbnail = info.get('thumbnail', '')
+            
             return audio_source
+        
         except Exception as e:
-            print(f"Error retrieving the audio: {e}")
+            print(f"Error retrieving audio from {url}: {e}")
             return None
