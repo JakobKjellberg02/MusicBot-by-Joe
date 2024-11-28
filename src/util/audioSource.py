@@ -6,11 +6,6 @@ class AudioSource:
     def __init__(self):
         self.ytdl_format_options = {
             'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
             'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
             'restrictfilenames': True,
             'noplaylist': True,
@@ -33,7 +28,7 @@ class AudioSource:
         try:
             info = await asyncio.to_thread(self.ytdl.extract_info, url, download=False)
             if 'url' not in info:
-                print(f"The audio URL was invalid.")
+                print(f"The audio URL was invalid")
                 return None
             
             audio_url = info['url']

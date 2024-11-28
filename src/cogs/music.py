@@ -20,8 +20,8 @@ class Music(commands.Cog):
         source = self.queue[guild_id][0]
 
         interaction.guild.voice_client.play(
-        source, 
-        after=lambda e: self.bot.loop.create_task(self.song_finished(interaction))
+            source, 
+            after=lambda e: self.bot.loop.create_task(self.song_finished(interaction))
         )
     
     async def song_finished(self, interaction: discord.Interaction):
@@ -43,11 +43,9 @@ class Music(commands.Cog):
             return await interaction.followup.send("You must be in a voice channel.")
             
         voice_channel = interaction.user.voice.channel
-        try:
-            voice_client = await voice_channel.connect()
-        except discord.ClientException:
-            voice_client = interaction.guild.voice_client
-            
+        if not interaction.guild.voice_client:
+            await voice_channel.connect()
+        
         try: 
             source = await self.audio_source_manager.get_audio_source_yt(url)
             if not source:
@@ -65,6 +63,18 @@ class Music(commands.Cog):
             await self.play_next(interaction)
             
         await interaction.followup.send(f"Added to queue: {url}")
+    
+    @app_commands.command(name="skip", description="Skip the current song")
+    async def skip(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+        if not interaction.guild.voice_client:
+            return await interaction.followup.send(f"Not in a voice channel")
+        
+        if not interaction.guild.voice_client.is_playing():
+            return await interaction.followup.send(f"Not currently playing a song")
+        
+        interaction.guild.voice_client.stop()
+        await interaction.followup.send(f"Skipped song")
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
