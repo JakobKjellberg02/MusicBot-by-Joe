@@ -10,6 +10,31 @@ class Music(commands.Cog):
         self.queue = {}
         self.audio_source_manager = AudioSource()
     
+    async def play_next(self, interaction: discord.Interaction):
+        guild_id = interaction.guild_id
+
+        if not self.queue.get(guild_id):
+            await interaction.guild.voice_client.disconnect()
+            return
+        
+        source = self.queue[guild_id][0]
+
+        interaction.guild.voice_client.play(
+        source, 
+        after=lambda e: self.bot.loop.create_task(self.song_finished(interaction))
+        )
+    
+    async def song_finished(self, interaction: discord.Interaction):
+        guild_id = interaction.guild_id
+        
+        if guild_id in self.queue and self.queue[guild_id]:
+            self.queue[guild_id].pop(0)
+        
+        if self.queue.get(guild_id):
+            await self.play_next(interaction)
+        else:
+            await interaction.guild.voice_client.disconnect()
+    
     @app_commands.command(name="play", description="Play a song from YouTube")
     async def play(self, interaction: discord.Interaction, url: str):
         await interaction.response.defer()
