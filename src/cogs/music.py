@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from util.audioSource import AudioSource
@@ -8,30 +9,37 @@ class Music(commands.Cog):
         self.bot = bot
         self.queue = {}
         self.audio_source_manager = AudioSource()
+    
+    @app_commands.command(name="play", description="Play a song from YouTube")
+    async def play(self, interaction: discord.Interaction, url: str):
+        await interaction.response.defer()
 
-        @commands.command(name='play')
-        async def play(self, ctx, *, url):
-            if not ctx.author.voice:
-                return await ctx.send(f"You must be in a voice channel.")
+        if not interaction.user.voice:
+            return await interaction.followup.send("You must be in a voice channel.")
             
-            voice_channel = ctx.author.voice.channel
-            if ctx.voice_client is None:
-                await voice_channel.connect()
+        voice_channel = interaction.user.voice.channel
+        try:
+            voice_client = await voice_channel.connect()
+        except discord.ClientException:
+            voice_client = interaction.guild.voice_client
             
-            source = await self.audio_source.get_audio_source_yt(url)
+        try: 
+            source = await self.audio_source_manager.get_audio_source_yt(url)
             if not source:
-                return await ctx.send(f"Couldn't retrieve the audio source")
+                return await interaction.followup.send("Couldn't retrieve the audio source")
+        except Exception as e:
+            return await interaction.followup.send(f"Error retrieving audio: {str(e)}")
             
-            guild_id = ctx.guild.id
-            if guild_id not in self.queue:
-                self.queue[guild_id] = []
+        guild_id = interaction.guild_id
+        if guild_id not in self.queue:
+            self.queue[guild_id] = []
 
-            self.queue[guild_id].append(source)
+        self.queue[guild_id].append(source)
 
-            if len(self.queue[guild_id]) == 1:
-                await self.play_next(ctx)
+        if len(self.queue[guild_id]) == 1:
+            await self.play_next(interaction)
             
-            await ctx.send(f"Added to queue: {url}")
+        await interaction.followup.send(f"Added to queue: {url}")
 
 async def setup(bot):
     await bot.add_cog(Music(bot))

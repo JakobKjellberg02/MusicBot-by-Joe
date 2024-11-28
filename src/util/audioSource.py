@@ -27,12 +27,12 @@ class AudioSource:
         }
         self.ytdl = yt_dlp.YoutubeDL(self.ytdl_format_options)
 
-        async def get_audio_source_yt(self, url):
-            try:
-                info = self.ytdl.extract_info(url, download=False)
-                url = info['url']
+    async def get_audio_source_yt(self, url):
+        try:
+            info = self.ytdl.extract_info(url, download=False)
+            url = info['url']
 
-                return discord.FFmpegOpusAudio(url, **self.ffmpeg_options)
-            except Exception as e:
-                print(f"Error retrieving the audio: {e}")
-                return None
+            return discord.FFmpegOpusAudio(url, **self.ffmpeg_options)
+        except Exception as e:
+            print(f"Error retrieving the audio: {e}")
+            return None

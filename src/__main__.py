@@ -27,14 +27,20 @@ class MusicByJoe(commands.Bot):
                         print(f'Loaded extension: {filename}')
                     except Exception as e:
                         print(f'Failed to load extension {filename}: {str(e)}')
+        try:
+            synced = await self.tree.sync()
+            print(f"Synced {len(synced)} slash command(s)")
+        except Exception as e:
+            print(f"Error syncing slash commands: {str(e)}")
+
     async def on_ready(self):
         """ Ready check from the bot"""
         print(f'{self.user} has connected!')
-        await self.change_presence(activity=discord.CustomActivity("!help for commands"))
+        await self.change_presence(activity=discord.CustomActivity("Use / to see commands"))
 
 def main():
     """ It is show time baby """
-    bot = MusicByJoe(command_prefix='+', intents=intents) # The prefix is "+" but can be changed
+    bot = MusicByJoe(command_prefix=None, intents=intents) 
     bot.run(DISCORD_BOT_API_KEY, log_handler=handler)
 
 if __name__ == "__main__": # Python main call 
