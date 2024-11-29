@@ -82,6 +82,14 @@ class Music(commands.Cog):
             await self.play_next(interaction)
 
         await interaction.followup.send(f"Added to queue: {source.title}.")
+    
+    @app_commands.command(name="skip", description="Skip the current song")
+    async def skip_command(self, interaction: discord.Interaction):
+        await self.skip(interaction)
+
+    @app_commands.command(name="stop", description="Stop playback and clear the queue")
+    async def stop_command(self, interaction: discord.Interaction):
+        await self.stop(interaction)
 
     async def skip(self, interaction: discord.Interaction):
         await interaction.response.defer()  
