@@ -28,9 +28,16 @@ class Music(commands.Cog):
         if self.player_message:
             await self.player_message.delete()  
 
-        embed = discord.Embed(title="Now Playing", description=source.title)
+        embed = discord.Embed(
+            title="Now Playing", 
+            description=f"**{source.title}**",
+            color=discord.Color.red()
+        )
         embed.set_thumbnail(url=source.thumbnail)
-        view = MusicPlayerView(self)  
+        embed.add_field(name="Requested by", value=source.requester.mention, inline=True)
+        embed.add_field(name="Duration", value=source.duration, inline=True)
+
+        view = MusicPlayerView(self)
         self.player_message = await interaction.followup.send(embed=embed, view=view)
 
     async def song_finished(self, interaction):
@@ -44,8 +51,8 @@ class Music(commands.Cog):
         else:
             await interaction.guild.voice_client.disconnect()
 
-    @app_commands.command(name="play", description="Start or add a song to the music player")
-    async def play(self, interaction: discord.Interaction, url: str):
+    @app_commands.command(name="play", description="Play or add a song to the queue with URL or Search.")
+    async def play(self, interaction: discord.Interaction, query: str):
         await interaction.response.defer()
 
         if interaction.channel.name != 'music':
@@ -57,11 +64,9 @@ class Music(commands.Cog):
         voice_channel = interaction.user.voice.channel
         if not interaction.guild.voice_client:
             await voice_channel.connect()
-
+        
         try:
-            source = await self.audio_source_manager.get_audio_source_yt(url)
-            if not source:
-                return await interaction.followup.send("Couldn't retrieve the audio source.")
+            source = await self.audio_source_manager.get_audio_source_yt(query, interaction.user)
         except Exception as e:
             return await interaction.followup.send(f"Error retrieving audio: {str(e)}.")
 

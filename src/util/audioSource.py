@@ -1,6 +1,8 @@
 import discord
 import yt_dlp
 import asyncio
+import validators
+import datetime
 
 class AudioSource:
     def __init__(self):
@@ -24,9 +26,18 @@ class AudioSource:
         }
         self.ytdl = yt_dlp.YoutubeDL(self.ytdl_format_options)
 
-    async def get_audio_source_yt(self, url):
+    async def get_audio_source_yt(self, query, request):
         try:
-            info = await asyncio.to_thread(self.ytdl.extract_info, url, download=False)
+            if validators.url(query):
+                info = await asyncio.to_thread(self.ytdl.extract_info, query, download=False)
+            else:
+                search_query = f"ytsearch1:{query}"
+                info = await asyncio.to_thread(self.ytdl.extract_info, search_query, download=False)
+                
+                if 'entries' in info and info['entries']:
+                    info = info['entries'][0]
+                else:
+                    raise ValueError("No search results found")
             
             if not info or 'url' not in info:
                 raise ValueError("Invalid audio source")
@@ -37,13 +48,14 @@ class AudioSource:
                 **self.ffmpeg_options
             )
 
-            audio_source.url = url
+            audio_source.url = info.get('webpage_url', query)
             audio_source.title = info.get('title', 'Unknown Title')
-            audio_source.duration = info.get('duration', 0)
+            audio_source.duration = str(datetime.timedelta(seconds=info.get('duration', 0)))
             audio_source.thumbnail = info.get('thumbnail', '')
+            audio_source.requester = request
             
             return audio_source
         
         except Exception as e:
-            print(f"Error retrieving audio from {url}: {e}")
+            print(f"Error retrieving audio from {query}: {e}")
             return None
