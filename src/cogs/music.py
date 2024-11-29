@@ -2,6 +2,8 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+import traceback
+
 from util.audioSource import AudioSource
 from view.musicPlayerView import MusicPlayerView
 
@@ -51,7 +53,11 @@ class Music(commands.Cog):
         else:
             await interaction.guild.voice_client.disconnect()
             if self.player_message:
-                await self.player_message.delete()  
+                try:
+                    await self.player_message.delete()
+                    self.player_message = None
+                except discord.NotFound:
+                    self.player_message = None
 
     @app_commands.command(name="play", description="Play or add a song to the queue with URL or Search.")
     async def play(self, interaction: discord.Interaction, query: str):
@@ -87,9 +93,16 @@ class Music(commands.Cog):
     async def skip_command(self, interaction: discord.Interaction):
         await self.skip(interaction)
 
-    @app_commands.command(name="stop", description="Stop playback and clear the queue")
+    @app_commands.command(name="stop", description="Stop playback and clear the queue.")
     async def stop_command(self, interaction: discord.Interaction):
-        await self.stop(interaction)
+        await interaction.response.defer()  
+        guild_id = interaction.guild_id
+        if interaction.guild.voice_client:
+            self.queue[guild_id].clear()
+            interaction.guild.voice_client.stop()
+            await interaction.followup.send("Stopped playing and cleared queue")
+            
+            
 
     async def skip(self, interaction: discord.Interaction):
         await interaction.response.defer()  
