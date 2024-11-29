@@ -50,6 +50,8 @@ class Music(commands.Cog):
             await self.play_next(interaction)
         else:
             await interaction.guild.voice_client.disconnect()
+            if self.player_message:
+                await self.player_message.delete()  
 
     @app_commands.command(name="play", description="Play or add a song to the queue with URL or Search.")
     async def play(self, interaction: discord.Interaction, query: str):
